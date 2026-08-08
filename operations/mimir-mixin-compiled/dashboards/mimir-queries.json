@@ -36,7 +36,6 @@
             "panels": [
                {
                   "datasource": "$datasource",
-                  "description": "### Queue duration\n<p>\nThe query-scheduler is an optional service that moves the internal queue from the query-frontend into a separate component.\nIf the query-scheduler is deployed, these panels will show \"No data.\"\n</p>\n\n",
                   "fieldConfig": {
                      "defaults": {
                         "custom": {
@@ -75,43 +74,43 @@
                   "span": 3,
                   "targets": [
                      {
-                        "expr": "(histogram_quantile(0.99, sum (rate(cortex_query_frontend_queue_duration_seconds{$read_path_matcher}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
+                        "expr": "(histogram_quantile(0.99, sum (rate(cortex_query_frontend_enqueue_duration_seconds{$read_path_matcher}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
                         "format": "time_series",
                         "legendFormat": "99th percentile",
                         "refId": "A"
                      },
                      {
-                        "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_query_frontend_queue_duration_seconds_bucket{$read_path_matcher}[$__rate_interval])))) and on() (vector($latency_metrics) == 1)",
+                        "expr": "(histogram_quantile(0.99, sum by (le) (rate(cortex_query_frontend_enqueue_duration_seconds_bucket{$read_path_matcher}[$__rate_interval])))) and on() (vector($latency_metrics) == 1)",
                         "format": "time_series",
                         "legendFormat": "99th percentile",
                         "refId": "A_classic"
                      },
                      {
-                        "expr": "(histogram_quantile(0.50, sum (rate(cortex_query_frontend_queue_duration_seconds{$read_path_matcher}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
+                        "expr": "(histogram_quantile(0.50, sum (rate(cortex_query_frontend_enqueue_duration_seconds{$read_path_matcher}[$__rate_interval])))) and on() (vector($latency_metrics) == -1)",
                         "format": "time_series",
                         "legendFormat": "50th percentile",
                         "refId": "B"
                      },
                      {
-                        "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_query_frontend_queue_duration_seconds_bucket{$read_path_matcher}[$__rate_interval])))) and on() (vector($latency_metrics) == 1)",
+                        "expr": "(histogram_quantile(0.50, sum by (le) (rate(cortex_query_frontend_enqueue_duration_seconds_bucket{$read_path_matcher}[$__rate_interval])))) and on() (vector($latency_metrics) == 1)",
                         "format": "time_series",
                         "legendFormat": "50th percentile",
                         "refId": "B_classic"
                      },
                      {
-                        "expr": "(sum(histogram_sum(rate(cortex_query_frontend_queue_duration_seconds{$read_path_matcher}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_query_frontend_queue_duration_seconds{$read_path_matcher}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
+                        "expr": "(sum(histogram_sum(rate(cortex_query_frontend_enqueue_duration_seconds{$read_path_matcher}[$__rate_interval]))) /\nsum(histogram_count(rate(cortex_query_frontend_enqueue_duration_seconds{$read_path_matcher}[$__rate_interval])))\n) and on() (vector($latency_metrics) == -1)",
                         "format": "time_series",
                         "legendFormat": "Average",
                         "refId": "C"
                      },
                      {
-                        "expr": "(sum(rate(cortex_query_frontend_queue_duration_seconds_sum{$read_path_matcher}[$__rate_interval])) /\nsum(rate(cortex_query_frontend_queue_duration_seconds_count{$read_path_matcher}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
+                        "expr": "(sum(rate(cortex_query_frontend_enqueue_duration_seconds_sum{$read_path_matcher}[$__rate_interval])) /\nsum(rate(cortex_query_frontend_enqueue_duration_seconds_count{$read_path_matcher}[$__rate_interval]))\n) and on() (vector($latency_metrics) == 1)",
                         "format": "time_series",
                         "legendFormat": "Average",
                         "refId": "C_classic"
                      }
                   ],
-                  "title": "Queue duration",
+                  "title": "Enqueue duration",
                   "type": "timeseries",
                   "yaxes": [
                      {
