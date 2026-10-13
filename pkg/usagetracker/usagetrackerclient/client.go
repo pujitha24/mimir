@@ -928,7 +928,7 @@ func newPartitionBatcher(partition int32, maxSeriesPerBatch int, logger log.Logg
 		userSeries:  nil,
 		seriesCount: 0,
 
-		flushChan:    make(chan struct{}),
+		flushChan:    make(chan struct{}, 1), // Buffered so a signal isn't lost if the flush worker isn't waiting yet.
 		stoppingChan: stopping,
 
 		trackerClient: trackerClient,
@@ -970,7 +970,7 @@ func (b *partitionBatcher) signalFlush() {
 	case b.flushChan <- struct{}{}:
 	case <-b.stoppingChan:
 		return
-	default: // flusher is busy. no need to block.
+	default: // a flush is already pending. no need to block.
 	}
 }
 
