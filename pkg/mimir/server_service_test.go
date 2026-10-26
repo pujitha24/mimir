@@ -57,3 +57,21 @@ func TestServerStopViaStop(t *testing.T) {
 	require.Error(t, s.AwaitTerminated(context.Background()))
 	require.Equal(t, services.Failed, s.State())
 }
+
+func TestServerStopWhileStarting(t *testing.T) {
+	serv, err := server.New(getServerConfig(t, log.LogfmtFormat, "info"))
+	require.NoError(t, err)
+
+	// The service context is already canceled when the service starts, so the running function is
+	// skipped and the service goes straight from Starting to Stopping.
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	s := NewServerService(serv, func() []services.Service { return nil })
+	require.NoError(t, s.StartAsync(ctx))
+
+	awaitCtx, awaitCancel := context.WithTimeout(t.Context(), 10*time.Second)
+	defer awaitCancel()
+	require.NoError(t, s.AwaitTerminated(awaitCtx))
+	require.Equal(t, services.Terminated, s.State())
+}

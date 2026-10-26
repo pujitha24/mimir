@@ -24,12 +24,18 @@ import (
 func NewServerService(serv *server.Server, servicesToWaitFor func() []services.Service) services.Service {
 	serverDone := make(chan error, 1)
 
-	runFn := func(ctx context.Context) error {
+	// Run the server from the starting function rather than the running one: if the service is
+	// stopped while it is still starting, the running function is skipped, and stoppingFn
+	// would then wait forever on serverDone.
+	startFn := func(_ context.Context) error {
 		go func() {
 			defer close(serverDone)
 			serverDone <- serv.Run()
 		}()
+		return nil
+	}
 
+	runFn := func(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
@@ -56,7 +62,7 @@ func NewServerService(serv *server.Server, servicesToWaitFor func() []services.S
 		return nil
 	}
 
-	return services.NewBasicService(nil, runFn, stoppingFn)
+	return services.NewBasicService(startFn, runFn, stoppingFn)
 }
 
 // DisableSignalHandling puts a dummy signal handler

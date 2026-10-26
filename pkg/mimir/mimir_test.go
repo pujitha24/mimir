@@ -18,6 +18,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -325,7 +326,13 @@ func TestMimirServerShutdownWhileModuleIsStarting(t *testing.T) {
 	})
 	require.NoError(t, c.ModuleManager.AddDependency(Querier, "test-blocking-module"))
 
-	errCh := make(chan error)
+	// Handle SIGINT in the test process too, so that a signal sent before Mimir's signal handler
+	// is listening doesn't hit the default action and terminate the test binary.
+	sigs := make(chan os.Signal, 100)
+	signal.Notify(sigs, syscall.SIGINT)
+	t.Cleanup(func() { signal.Stop(sigs) })
+
+	errCh := make(chan error, 1)
 	go func() {
 		errCh <- c.Run()
 	}()
@@ -339,14 +346,23 @@ func TestMimirServerShutdownWhileModuleIsStarting(t *testing.T) {
 	proc, err := os.FindProcess(os.Getpid())
 	require.NoError(t, err)
 
-	// Mimir reacts on SIGINT and does shutdown.
-	require.NoError(t, proc.Signal(syscall.SIGINT))
+	// Mimir reacts on SIGINT and does shutdown. Its signal handler starts listening asynchronously,
+	// so a signal sent too early is lost: keep sending until Mimir stops.
+	timeout := time.After(10 * time.Second)
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
 
-	select {
-	case <-time.After(10 * time.Second):
-		require.Fail(t, "Mimir didn't stop in time")
-	case err := <-errCh:
-		require.NoError(t, err)
+	for {
+		require.NoError(t, proc.Signal(syscall.SIGINT))
+
+		select {
+		case <-timeout:
+			require.Fail(t, "Mimir didn't stop in time")
+		case err := <-errCh:
+			require.NoError(t, err)
+			return
+		case <-ticker.C:
+		}
 	}
 }
 
